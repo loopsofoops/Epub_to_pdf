@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#090B10" />
+  <title>LUNA//PDF — MOONCORE BRUTALIST CONVERTER</title>
+
+  <!-- Google Fonts for Mooncore UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core Engines: JSZip & jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      /* Mooncore Dark Default */
+      --bg: #090B10;
+      --bg-grid: rgba(186, 196, 255, 0.04);
+      --surface: #12151F;
+      --surface-elevated: #191D2B;
+      --ink: #F0F3FA;
+      --muted: #7E87A6;
+      --accent: #BCC6FF;
+      --accent-ink: #090B10;
+      --accent-dim: rgba(188, 198, 255, 0.12);
+      --ready: #7DF9C2;
+      --border-color: #2A3147;
+      --border-strong: #BCC6FF;
+      --border: 1.5px solid var(--border-color);
+      --shadow: 4px 4px 0px #000000;
+      --shadow-sm: 2px 2px 0px #000000;
+      --radius: 12px;
+      --radius-sm: 6px;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body.daylight {
+      /* Lunar Alabaster Daylight Mode */
+      --bg: #ECEEF5;
+      --bg-grid: rgba(15, 20, 35, 0.04);
+      --surface: #FFFFFF;
+      --surface-elevated: #F4F6FB;
+      --ink: #0D101A;
+      --muted: #5E657E;
+      --accent: #1B2238;
+      --accent-ink: #FFFFFF;
+      --accent-dim: rgba(27, 34, 56, 0.08);
+      --ready: #00C476;
+      --border-color: #0D101A;
+      --border-strong: #0D101A;
+      --shadow: 4px 4px 0px #0D101A;
+      --shadow-sm: 2px 2px 0px #0D101A;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        linear-gradient(to right, var(--bg-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.45;
+      padding: 14px 12px 56px;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    /* TOP TELEMETRY BAR */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .moon-glyph {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--accent-ink);
+      display: grid;
+      place-items: center;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: inset -5px -2px 0px rgba(0, 0, 0, 0.25);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 17px;
+      letter-spacing: -0.4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 99px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid var(--border-color);
+      letter-spacing: 0.5px;
+    }
+
+    .phase-btn {
+      background: var(--surface-elevated);
+      color: var(--ink);
+      border: var(--border);
+      border-radius: 99px;
+      padding: 6px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.08s ease;
+    }
+
+    .phase-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: none;
+    }
+
+    /* CARDS / MODULES */
+    .card {
+      background: var(--surface);
+      border: var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .card-head {
+      background: var(--surface-elevated);
+      border-bottom: var(--border);
+      padding: 9px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-head .status-pill {
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 10px;
+    }
+
+    .card-body {
+      padding: 14px;
+    }
+
+    /* DROPZONE */
+    .dropzone {
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface-elevated);
+      padding: 22px 16px;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .dropzone.loaded {
+      border-style: solid;
+      text-align: left;
+      padding: 14px;
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .drop-icon {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .drop-title {
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.2px;
+      margin-bottom: 3px;
+    }
+
+    .drop-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .meta-grid {
+      display: none;
+      grid-template-columns: 78px 1fr;
+      gap: 6px 10px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: var(--border);
+    }
+
+    .dropzone.loaded .meta-grid {
+      display: grid;
+    }
+
+    .dropzone.loaded .drop-icon {
+      display: none;
+    }
+
+    .meta-key {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .meta-val {
+      color: var(--ink);
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    /* PARAMETER CONTROLS */
+    .param-row {
+      margin-bottom: 14px;
+    }
+
+    .param-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .param-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 7px;
+      color: var(--muted);
+    }
+
+    .param-header span:last-child {
+      color: var(--ink);
+    }
+
+    .seg-group {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .seg-group.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .seg-btn {
+      background: var(--surface-elevated);
+      color: var(--muted);
+      border: var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 6px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s ease;
+    }
+
+    .seg-btn.active {
+      background: var(--accent);
+      color: var(--accent-ink);
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .seg-btn:active {
+      transform: translate(1px, 1px);
+    }
+
+    /* ANDROID PILL TOGGLES */
+    .toggles-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: var(--border);
+    }
+
+    .chip-toggle {
+      background: var(--surface-elevated);
+      border: var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 11px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .chip-toggle.active {
+      color: var(--ink);
+      border-color: var(--border-strong);
+      background: var(--accent-dim);
+    }
+
+    .dot-led {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid var(--muted);
+      display: inline-block;
+    }
+
+    .chip-toggle.active .dot-led {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* PROGRESS TELEMETRY */
+    .telemetry-box {
+      background: var(--surface-elevated);
+      border: var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .telemetry-top {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .progress-rail {
+      width: 100%;
+      height: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border-color);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.12s linear;
+    }
+
+    /* MAIN ACTION BUTTON */
+    .btn-compile {
+      width: 100%;
+      background: var(--accent);
+      color: var(--accent-ink);
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 15px;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 0.08s ease;
+    }
+
+    .btn-compile:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-compile:not(:disabled):active {
+      transform: translate(3px, 3px);
+      box-shadow: none;
+    }
+
+    /* DOWNLOAD PANEL */
+    .output-dock {
+      display: none;
+      margin-top: 14px;
+      background: var(--surface-elevated);
+      border: 1.5px solid var(--ready);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .output-dock.visible {
+      display: block;
+    }
+
+    .dock-title {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--ready);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .dock-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .dock-actions {
+      display: grid;
+      gap: 8px;
+    }
+
+    .btn-dl {
+      background: var(--ready);
+      color: #05140D;
+      border: 1.5px solid #05140D;
+      border-radius: var(--radius-sm);
+      padding: 13px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      cursor: pointer;
+    }
+
+    .btn-dl.outline {
+      background: transparent;
+      color: var(--ink);
+      border: var(--border);
+      padding: 10px;
+      font-size: 11px;
+    }
+
+    #printMount {
+      display: none;
+    }
+
+    @media print {
+      body > *:not(#printMount) {
+        display: none !important;
+      }
+      body {
+        background: #FFF !important;
+        color: #000 !important;
+        max-width: none !important;
+        padding: 0 !important;
+      }
+      #printMount {
+        display: block !important;
+      }
+      .print-ch {
+        page-break-before: always;
+      }
+      .print-ch:first-child {
+        page-break-before: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP TELEMETRY BAR -->
+  <header class="topbar">
+    <div class="brand-wrap">
+      <div class="moon-glyph">◐</div>
+      <div>
+        <div class="brand-title">
+          LUNA//PDF <span class="badge">v3.2 HD</span>
+        </div>
+      </div>
+    </div>
+    <button class="phase-btn" id="phaseBtn" type="button">
+      <span>◑</span> <span id="phaseLabel">ALABASTER</span>
+    </button>
+  </header>
+
+  <!-- 01 // SOURCE ORBIT -->
+  <section class="card">
+    <div class="card-head">
+      <span>01 // SOURCE_ARCHIVE</span>
+      <span class="status-pill" id="sourceStatus">STANDBY</span>
+    </div>
+    <div class="card-body">
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="epubInput" accept=".epub,application/epub+zip" />
+        <div class="drop-icon">✦</div>
+        <div class="drop-title" id="dropTitle">TAP TO SELECT .EPUB ARCHIVE</div>
+        <div class="drop-sub" id="dropSub">LOSSLESS INLINE MATH + DIAGRAM ENGINE // 100% LOCAL</div>
+
+        <div class="meta-grid" id="metaGrid">
+          <div class="meta-key">TITLE</div>
+          <div class="meta-val" id="metaTitle">—</div>
+          <div class="meta-key">AUTHOR</div>
+          <div class="meta-val" id="metaAuthor">—</div>
+          <div class="meta-key">SECTIONS</div>
+          <div class="meta-val" id="metaSpine">—</div>
+          <div class="meta-key">PAYLOAD</div>
+          <div class="meta-val" id="metaSize">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 // TYPOGRAPHY & LAYOUT -->
+  <section class="card">
+    <div class="card-head">
+      <span>02 // EDITORIAL_PARAMETERS</span>
+      <span class="status-pill" id="fontEngineBadge">AESTHETIC SERIF</span>
+    </div>
+    <div class="card-body">
+
+      <!-- Aesthetic Font Family (Default: Editorial Book Serif) -->
+      <div class="param-row">
+        <div class="param-header">
+          <span>AESTHETIC TYPEFACE</span>
+          <span id="lblFont">LITERATA (BOOK SERIF)</span>
+        </div>
+        <div class="seg-group cols-3" data-param="font">
+          <div class="seg-btn active" data-val="serif" data-desc="LITERATA (BOOK SERIF)">BOOK SERIF</div>
+          <div class="seg-btn" data-val="sans" data-desc="JAKARTA (MODERN SANS)">CLEAN SANS</div>
+          <div class="seg-btn" data-val="mono" data-desc="JETBRAINS (TECH MONO)">TECH MONO</div>
+        </div>
+      </div>
+
+      <!-- Page Format -->
+      <div class="param-row">
+        <div class="param-header">
+          <span>PAGE GEOMETRY</span>
+          <span id="lblFormat">A4 (210×297MM)</span>
+        </div>
+        <div class="seg-group" data-param="format">
+          <div class="seg-btn active" data-val="a4" data-desc="A4 (210×297MM)">A4</div>
+          <div class="seg-btn" data-val="a5" data-desc="A5 (148×210MM)">A5</div>
+          <div class="seg-btn" data-val="letter" data-desc="LETTER (8.5×11IN)">LETTER</div>
+          <div class="seg-btn" data-val="mobile" data-desc="MOBILE (112×196MM)">PHONE</div>
+        </div>
+      </div>
+
+      <!-- Font Size (11pt default for optimal book typesetting) -->
+      <div class="param-row">
+        <div class="param-header">
+          <span>TYPE SCALE</span>
+          <span id="lblSize">11 PT (OPTIMAL)</span>
+        </div>
+        <div class="seg-group" data-param="fontSize">
+          <div class="seg-btn" data-val="10" data-desc="10 PT (COMPACT)">10PT</div>
+          <div class="seg-btn active" data-val="11" data-desc="11 PT (OPTIMAL)">11PT</div>
+          <div class="seg-btn" data-val="12.5" data-desc="12.5 PT (READER)">12.5PT</div>
+          <div class="seg-btn" data-val="14" data-desc="14 PT (LARGE)">14PT</div>
+        </div>
+      </div>
+
+      <!-- Margins & Line Spacing combined neatly -->
+      <div class="param-row">
+        <div class="param-header">
+          <span>PAGE MARGINS</span>
+          <span id="lblMargin">16 MM (BALANCED)</span>
+        </div>
+        <div class="seg-group cols-3" data-param="margin">
+          <div class="seg-btn" data-val="11" data-desc="11 MM (NARROW)">11MM</div>
+          <div class="seg-btn active" data-val="16" data-desc="16 MM (BALANCED)">16MM</div>
+          <div class="seg-btn" data-val="22" data-desc="22 MM (WIDE)">22MM</div>
+        </div>
+      </div>
+
+      <div class="param-row">
+        <div class="param-header">
+          <span>LINE RHYTHM</span>
+          <span id="lblLine">1.48× EDITORIAL</span>
+        </div>
+        <div class="seg-group cols-3" data-param="lineHeight">
+          <div class="seg-btn" data-val="1.32" data-desc="1.32× COMPACT">1.32×</div>
+          <div class="seg-btn active" data-val="1.48" data-desc="1.48× EDITORIAL">1.48×</div>
+          <div class="seg-btn" data-val="1.65" data-desc="1.65× RELAXED">1.65×</div>
+        </div>
+      </div>
+
+      <!-- Smart Toggles -->
+      <div class="toggles-wrap">
+        <div class="chip-toggle active" data-toggle="images">
+          <span>HD LOSSLESS IMG</span>
+          <span class="dot-led"></span>
+        </div>
+        <div class="chip-toggle active" data-toggle="inlineMath">
+          <span>INLINE EQUATIONS</span>
+          <span class="dot-led"></span>
+        </div>
+        <div class="chip-toggle active" data-toggle="justify">
+          <span>WORD JUSTIFY</span>
+          <span class="dot-led"></span>
+        </div>
+        <div class="chip-toggle active" data-toggle="pageNumbers">
+          <span>PAGE NUMBERS</span>
+          <span class="dot-led"></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 03 // COMPILER & OUTPUT -->
+  <section class="card">
+    <div class="card-head">
+      <span>03 // TELEMETRY_OUTPUT</span>
+      <span class="status-pill" id="engineStatus">IDLE</span>
+    </div>
+    <div class="card-body">
+      <div class="telemetry-box">
+        <div class="telemetry-top">
+          <span id="statusMsg">AWAITING EPUB ARCHIVE...</span>
+          <span id="statusPct">0%</span>
+        </div>
+        <div class="progress-rail">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </div>
+
+      <button class="btn-compile" id="compileBtn" disabled>
+        COMPILE LOSSLESS PDF
+      </button>
+
+      <div class="output-dock" id="outputDock">
+        <div class="dock-title">● COMPILATION COMPLETE</div>
+        <div class="dock-meta" id="dockMeta">0 PAGES // 0.0 MB</div>
+        <div class="dock-actions">
+          <a class="btn-dl" id="downloadLink" href="#" download="book.pdf">
+            ↓ DOWNLOAD .PDF FILE
+          </a>
+          <button class="btn-dl outline" id="shareBtn" type="button" style="display:none;">
+            ↗ SHARE / OPEN IN ANDROID PDF VIEWER
+          </button>
+          <button class="btn-dl outline" id="printBtn" type="button">
+            ⎙ NATIVE SYSTEM PRINT ENGINE
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="printMount"></div>
+
+  <script>
+    // --- CONFIGURATION STATE ---
+    const config = {
+      font: 'serif',      // 'serif' | 'sans' | 'mono'
+      format: 'a4',
+      fontSize: 11,
+      margin: 16,
+      lineHeight: 1.48,
+      images: true,
+      inlineMath: true,
+      justify: true,
+      pageNumbers: true
+    };
+
+    let epubState = {
+      file: null,
+      zip: null,
+      title: 'Untitled',
+      author: 'Unknown',
+      spine: [],
+      imageCache: new Map(), // zipPath -> { dataUrl, format, width, height, alias }
+      pdfBlob: null,
+      pdfUrl: null,
+      pdfFilename: 'book.pdf'
+    };
+
+    // --- CDN TTF FONTS FOR TRUE UNICODE + AESTHETIC BOOK RENDERING ---
+    const TTF_URLS = {
+      serif: {
+        normal: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/literata/static/Literata-Regular.ttf',
+        bold: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/literata/static/Literata-Bold.ttf',
+        italic: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/literata/static/Literata-Italic.ttf'
+      },
+      sans: {
+        normal: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/plusjakartasans/static/PlusJakartaSans-Regular.ttf',
+        bold: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/plusjakartasans/static/PlusJakartaSans-Bold.ttf',
+        italic: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/plusjakartasans/static/PlusJakartaSans-Italic.ttf'
+      },
+      mono: {
+        normal: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/jetbrainsmono/static/JetBrainsMono-Regular.ttf',
+        bold: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/jetbrainsmono/static/JetBrainsMono-Bold.ttf',
+        italic: 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/jetbrainsmono/static/JetBrainsMono-Italic.ttf'
+      }
+    };
+
+    const cachedFontBase64 = {};
+
+    async function fetchFontBase64(url) {
+      if (cachedFontBase64[url]) return cachedFontBase64[url];
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Font fetch failed');
+      const buf = await res.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      const b64 = btoa(binary);
+      cachedFontBase64[url] = b64;
+      return b64;
+    }
+
+    async function registerAestheticFont(doc, familyKey) {
+      try {
+        const urls = TTF_URLS[familyKey];
+        const [regB64, boldB64, italB64] = await Promise.all([
+          fetchFontBase64(urls.normal),
+          fetchFontBase64(urls.bold),
+          fetchFontBase64(urls.italic)
+        ]);
+        const fontName = `Custom_${familyKey}`;
+        doc.addFileToVFS(`${fontName}-Regular.ttf`, regB64);
+        doc.addFont(`${fontName}-Regular.ttf`, fontName, 'normal');
+        doc.addFileToVFS(`${fontName}-Bold.ttf`, boldB64);
+        doc.addFont(`${fontName}-Bold.ttf`, fontName, 'bold');
+        doc.addFileToVFS(`${fontName}-Italic.ttf`, italB64);
+        doc.addFont(`${fontName}-Italic.ttf`, fontName, 'italic');
+        return { fontName, isUnicode: true };
+      } catch (e) {
+        // Offline fallback to core PDF font
+        const fallbackMap = { serif: 'times', sans: 'helvetica', mono: 'courier' };
+        return { fontName: fallbackMap[familyKey] || 'times', isUnicode: false };
+      }
+    }
+
+    // --- UI INTERACTIONS ---
+    const phaseBtn = document.getElementById('phaseBtn');
+    const phaseLabel = document.getElementById('phaseLabel');
+    phaseBtn.addEventListener('click', () => {
+      document.body.classList.toggle('daylight');
+      const isDay = document.body.classList.contains('daylight');
+      phaseLabel.textContent = isDay ? 'MOONCORE' : 'ALABASTER';
+    });
+
+    document.querySelectorAll('.seg-group').forEach(group => {
+      const param = group.dataset.param;
+      group.querySelectorAll('.seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          group.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const raw = btn.dataset.val;
+          config[param] = isNaN(Number(raw)) ? raw : Number(raw);
+
+          const desc = btn.dataset.desc;
+          if (param === 'font') document.getElementById('lblFont').textContent = desc;
+          if (param === 'format') document.getElementById('lblFormat').textContent = desc;
+          if (param === 'fontSize') document.getElementById('lblSize').textContent = desc;
+          if (param === 'margin') document.getElementById('lblMargin').textContent = desc;
+          if (param === 'lineHeight') document.getElementById('lblLine').textContent = desc;
+        });
+      });
+    });
+
+    document.querySelectorAll('.chip-toggle').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chip.classList.toggle('active');
+        config[chip.dataset.toggle] = chip.classList.contains('active');
+      });
+    });
+
+    // --- HELPERS ---
+    const statusMsg = document.getElementById('statusMsg');
+    const statusPct = document.getElementById('statusPct');
+    const progressBar = document.getElementById('progressBar');
+    const engineStatus = document.getElementById('engineStatus');
+    const compileBtn = document.getElementById('compileBtn');
+    const outputDock = document.getElementById('outputDock');
+    const downloadLink = document.getElementById('downloadLink');
+    const dockMeta = document.getElementById('dockMeta');
+    const shareBtn = document.getElementById('shareBtn');
+
+    function setTelemetry(pct, msg, state = 'ACTIVE') {
+      const c = Math.max(0, Math.min(100, Math.round(pct)));
+      progressBar.style.width = c + '%';
+      statusPct.textContent = c + '%';
+      if (msg) statusMsg.textContent = msg;
+      engineStatus.textContent = state;
+    }
+
+    function formatBytes(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+      return (b / 1048576).toFixed(2) + ' MB';
+    }
+
+    function resolveZipPath(baseDir, href) {
+      if (!href) return '';
+      const clean = decodeURIComponent(href.split('#')[0].split('?')[0]);
+      if (clean.startsWith('/')) return clean.slice(1);
+      const stack = baseDir ? baseDir.split('/').filter(Boolean) : [];
+      for (const part of clean.split('/')) {
+        if (!part || part === '.') continue;
+        if (part === '..') stack.pop();
+        else stack.push(part);
+      }
+      return stack.join('/');
+    }
+
+    function getZipEntry(zip, path) {
+      if (!path) return null;
+      if (zip.files[path]) return zip.files[path];
+      const lower = path.toLowerCase();
+      for (const k of Object.keys(zip.files)) {
+        if (k.toLowerCase() === lower) return zip.files[k];
+      }
+      return null;
+    }
+
+    // Translates Mathematica Private Use Area (PUA) & special symbols so they never corrupt lines
+    function cleanBookText(str, isUnicodeFont) {
+      if (!str) return '';
+      let s = str
+        // Mathematica PUA mappings (used heavily in Wolfram EPUBs for ->, <->, ==, etc.)
+        .replace(/[\uF522\uF523\uF3D4\u27F6\u2192\u2794\u279C]/g, isUnicodeFont ? ' → ' : ' -> ')
+        .replace(/[\u2190\u27F5]/g, isUnicodeFont ? ' ← ' : ' <- ')
+        .replace(/[\u2194\u27F7\uF524]/g, isUnicodeFont ? ' ↔ ' : ' <-> ')
+        .replace(/[\u21D2\u27F9\uF525]/g, isUnicodeFont ? ' ⇒ ' : ' => ')
+        .replace(/[\u21D4\u27FA]/g, isUnicodeFont ? ' ⇔ ' : ' <=> ')
+        .replace(/[\uF431\uF7D9]/g, ' == ')
+        .replace(/[\uF520\u2260]/g, isUnicodeFont ? ' ≠ ' : ' != ')
+        .replace(/[\u2264\uF432]/g, isUnicodeFont ? ' ≤ ' : ' <= ')
+        .replace(/[\u2265\uF433]/g, isUnicodeFont ? ' ≥ ' : ' >= ')
+        .replace(/[\u2248]/g, isUnicodeFont ? ' ≈ ' : ' ~= ')
+        .replace(/[\u221E]/g, isUnicodeFont ? '∞' : 'inf')
+        .replace(/[\u00D7\u2715]/g, '×')
+        .replace(/[\u22C5\u00B7]/g, '·')
+        // Strip remaining Private Use Area characters (\uE000-\uF8FF) that have no glyph in standard fonts
+        .replace(/[\uE000-\uF8FF]/g, ' → ')
+        .replace(/\u00A0/g, ' ')
+        .replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+      if (!isUnicodeFont) {
+        s = s
+          .replace(/[\u2018\u2019\u201A\u201B`]/g, "'")
+          .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+          .replace(/[\u2013\u2014\u2015\u2212]/g, ' - ')
+          .replace(/\u2026/g, '...')
+          // Replace any remaining non-WinAnsi characters safely
+          .replace(/[^\x00-\xFF]/g, '');
+      }
+      return s;
+    }
+
+    // --- STEP 1: LOAD EPUB ---
+    document.getElementById('epubInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        outputDock.classList.remove('visible');
+        compileBtn.disabled = true;
+        setTelemetry(12, 'MOUNTING EPUB CONTAINER...', 'READING');
+
+        const zip = await JSZip.loadAsync(file);
+        const containerEntry = getZipEntry(zip, 'META-INF/container.xml');
+        if (!containerEntry) throw new Error('MISSING META-INF/container.xml');
+
+        const parser = new DOMParser();
+        const containerDoc = parser.parseFromString(await containerEntry.async('text'), 'application/xml');
+        const rootEl = containerDoc.querySelector('rootfile');
+        if (!rootEl) throw new Error('MISSING OPF ROOTFILE');
+
+        const opfPath = rootEl.getAttribute('full-path');
+        const opfDir = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/')) : '';
+        const opfEntry = getZipEntry(zip, opfPath);
+        if (!opfEntry) throw new Error('MISSING OPF FILE');
+
+        const opfDoc = parser.parseFromString(await opfEntry.async('text'), 'application/xml');
+        const titleEl = opfDoc.getElementsByTagNameNS('*', 'title')[0] || opfDoc.querySelector('title');
+        const authorEl = opfDoc.getElementsByTagNameNS('*', 'creator')[0] || opfDoc.querySelector('creator');
+
+        const title = titleEl ? titleEl.textContent.trim() : file.name.replace(/\.epub$/i, '');
+        const author = authorEl ? authorEl.textContent.trim() : 'Unknown Author';
+
+        const manifest = {};
+        Array.from(opfDoc.getElementsByTagNameNS('*', 'item')).forEach(el => {
+          const id = el.getAttribute('id');
+          const href = el.getAttribute('href');
+          if (id && href) manifest[id] = resolveZipPath(opfDir, href);
+        });
+
+        const spine = [];
+        Array.from(opfDoc.getElementsByTagNameNS('*', 'itemref')).forEach(el => {
+          const idref = el.getAttribute('idref');
+          if (idref && manifest[idref]) spine.push(manifest[idref]);
+        });
+
+        if (!spine.length) throw new Error('EMPTY EPUB SPINE');
+
+        const safeName = title.replace(/[^a-z0-9_\-\s]/gi, '').trim().replace(/\s+/g, '_') || 'lunar_book';
+
+        epubState = {
+          file,
+          zip,
+          title,
+          author,
+          spine,
+          imageCache: new Map(),
+          pdfBlob: null,
+          pdfUrl: null,
+          pdfFilename: `${safeName}.pdf`
+        };
+
+        document.getElementById('dropzone').classList.add('loaded');
+        document.getElementById('dropTitle').textContent = 'TAP TO SWITCH .EPUB ARCHIVE';
+        document.getElementById('dropSub').textContent = file.name;
+        document.getElementById('sourceStatus').textContent = 'LOCKED';
+        document.getElementById('metaTitle').textContent = title;
+        document.getElementById('metaAuthor').textContent = author;
+        document.getElementById('metaSpine').textContent = `${spine.length} CHAPTERS`;
+        document.getElementById('metaSize').textContent = formatBytes(file.size);
+
+        compileBtn.disabled = false;
+        setTelemetry(100, 'ARCHIVE VERIFIED // READY TO COMPILE', 'READY');
+      } catch (err) {
+        console.error(err);
+        setTelemetry(0, 'ERROR: ' + err.message, 'FAULT');
+      }
+    });
+
+    // --- STEP 2: LOSSLESS HIGH-DEFINITION IMAGE DECODER ---
+    let imgAliasCounter = 1;
+
+    async function decodeEpubImage(zip, zipPath) {
+      if (!zipPath) return null;
+      if (epubState.imageCache.has(zipPath)) {
+        return epubState.imageCache.get(zipPath);
+      }
+
+      const entry = getZipEntry(zip, zipPath);
+      if (!entry) return null;
+
+      try {
+        const blob = await entry.async('blob');
+        const url = URL.createObjectURL(blob);
+
+        const result = await new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const natW = img.naturalWidth || img.width || 120;
+            const natH = img.naturalHeight || img.height || 40;
+
+            // Preserve 100% native pixel sharpness up to 2200px
+            const maxDim = 2200;
+            let w = natW;
+            let h = natH;
+            if (w > maxDim || h > maxDim) {
+              const r = Math.min(maxDim / w, maxDim / h);
+              w = Math.round(w * r);
+              h = Math.round(h * r);
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, w, h);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, w, h);
+
+            // Use lossless PNG for all equations, line art, diagrams, and medium images
+            const isLargePhoto = (w * h > 1100000) && /\.(jpe?g)$/i.test(zipPath);
+            const format = isLargePhoto ? 'JPEG' : 'PNG';
+            const dataUrl = isLargePhoto
+              ? canvas.toDataURL('image/jpeg', 0.94)
+              : canvas.toDataURL('image/png');
+
+            URL.revokeObjectURL(url);
+            resolve({
+              dataUrl,
+              format,
+              natW,
+              natH,
+              alias: `ep_img_${imgAliasCounter++}`
+            });
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            resolve(null);
+          };
+          img.src = url;
+        });
+
+        if (result) epubState.imageCache.set(zipPath, result);
+        return result;
+      } catch {
+        return null;
+      }
+    }
+
+    // --- STEP 3: RICH INLINE + BLOCK DOM PARSER ---
+    // Preserves inline <img> tags inside paragraphs so equations flow inline with text!
+    function parseChapterDom(bodyEl, chapterDir) {
+      const blocks = [];
+      let currentItems = [];
+      let currentType = 'p';
+
+      const BLOCK_TAGS = new Set([
+        'P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+        'LI', 'BLOCKQUOTE', 'PRE', 'SECTION', 'ARTICLE', 'HEADER', 'TR', 'FIGURE', 'FIGCAPTION'
+      ]);
+
+      function flushBlock() {
+        // Trim leading/trailing whitespace on text items
+        const cleaned = [];
+        for (const item of currentItems) {
+          if (item.kind === 'text') {
+            const t = item.text.replace(/\s+/g, ' ');
+            if (t) cleaned.push({ ...item, text: t });
+          } else {
+            cleaned.push(item);
+          }
+        }
+        // Check if block has meaningful content
+        const hasImg = cleaned.some(i => i.kind === 'img');
+        const fullStr = cleaned.filter(i => i.kind === 'text').map(i => i.text).join('').trim();
+        if (hasImg || fullStr.length > 0) {
+          blocks.push({
+            type: currentType,
+            items: cleaned,
+            plainText: fullStr
+          });
+        }
+        currentItems = [];
+      }
+
+      function parsePxAttr(el, attrName) {
+        const raw = el.getAttribute(attrName);
+        if (raw) {
+          const n = parseFloat(raw);
+          if (!isNaN(n) && n > 0) return n;
+        }
+        const style = el.getAttribute('style') || '';
+        const m = style.match(new RegExp(`${attrName}\\s*:\\s*([0-9.]+)px`, 'i'));
+        if (m) return parseFloat(m[1]);
+        return null;
+      }
+
+      function walk(node, styleState) {
+        if (!node) return;
+
+        if (node.nodeType === Node.TEXT_NODE) {
+          const val = node.nodeValue;
+          if (val) {
+            currentItems.push({
+              kind: 'text',
+              text: val,
+              bold: styleState.bold,
+              italic: styleState.italic
+            });
+          }
+          return;
+        }
+
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+        const tag = node.tagName.toUpperCase();
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'HEAD' || tag === 'NOSCRIPT') return;
+
+        if (tag === 'BR') {
+          flushBlock();
+          return;
+        }
+
+        if (tag === 'HR') {
+          flushBlock();
+          blocks.push({ type: 'hr', items: [], plainText: '' });
+          return;
+        }
+
+        if (tag === 'IMG' || tag === 'IMAGE') {
+          const rawSrc = node.getAttribute('src') || node.getAttribute('xlink:href') || node.getAttribute('href');
+          if (rawSrc && !rawSrc.startsWith('data:')) {
+            currentItems.push({
+              kind: 'img',
+              zipPath: resolveZipPath(chapterDir, rawSrc),
+              attrW: parsePxAttr(node, 'width'),
+              attrH: parsePxAttr(node, 'height'),
+              alt: node.getAttribute('alt') || ''
+            });
+          }
+          return;
+        }
+
+        const nextStyle = {
+          bold: styleState.bold || tag === 'B' || tag === 'STRONG',
+          italic: styleState.italic || tag === 'I' || tag === 'EM'
+        };
+
+        const isBlock = BLOCK_TAGS.has(tag);
+        const prevType = currentType;
+
+        if (isBlock) {
+          flushBlock();
+          if (tag === 'H1') currentType = 'h1';
+          else if (tag === 'H2') currentType = 'h2';
+          else if (tag === 'H3' || tag === 'H4' || tag === 'H5' || tag === 'H6') currentType = 'h3';
+          else if (tag === 'BLOCKQUOTE') currentType = 'quote';
+          else if (tag === 'LI') {
+            currentType = 'li';
+            currentItems.push({ kind: 'text', text: '• ', bold: true, italic: false });
+          } else {
+            currentType = 'p';
+          }
+        }
+
+        for (let child = node.firstChild; child; child = child.nextSibling) {
+          walk(child, nextStyle);
+        }
+
+        if (isBlock) {
+          flushBlock();
+          currentType = prevType;
+        }
+      }
+
+      walk(bodyEl, { bold: false, italic: false });
+      flushBlock();
+      return blocks;
+    }
+
+    // Computes physical millimeter dimensions of an image so small equations stay small & sharp
+    function computePhysicalImageSize(imgObj, item, basePt, contentW, isInlineContext) {
+      // Determine intended pixel width/height
+      let pxW = item.attrW || imgObj.natW;
+      let pxH = item.attrH || imgObj.natH;
+      if (item.attrW && !item.attrH) pxH = (imgObj.natH / imgObj.natW) * pxW;
+      if (item.attrH && !item.attrW) pxW = (imgObj.natW / imgObj.natH) * pxH;
+
+      // Many EPUB inline math images are 1.5x-2x retina when no width attribute is set
+      const scaleFactor = (basePt / 11);
+      // 125 DPI physical mapping (~0.203 mm per CSS pixel)
+      let pxToMm = 0.203 * scaleFactor;
+
+      // If it's inside a sentence with no explicit width attribute and looks like a 2x hi-DPI equation
+      if (isInlineContext && !item.attrH && pxH > 22 && pxH <= 64) {
+        pxToMm = 0.145 * scaleFactor;
+      }
+
+      let drawW = pxW * pxToMm;
+      let drawH = pxH * pxToMm;
+
+      if (drawW > contentW) {
+        const ratio = contentW / drawW;
+        drawW = contentW;
+        drawH = drawH * ratio;
+      }
+
+      return { drawW, drawH };
+    }
+
+    // --- STEP 4: COMPILE & TYPESET PDF ---
+    compileBtn.addEventListener('click', async () => {
+      if (!epubState.zip) return;
+
+      compileBtn.disabled = true;
+      outputDock.classList.remove('visible');
+      const printMount = document.getElementById('printMount');
+      printMount.innerHTML = '';
+
+      try {
+        const { jsPDF } = window.jspdf;
+
+        let formatSpec = 'a4';
+        if (config.format === 'a5') formatSpec = 'a5';
+        else if (config.format === 'letter') formatSpec = 'letter';
+        else if (config.format === 'mobile') formatSpec = [112, 196];
+
+        const doc = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: formatSpec,
+          compress: true
+        });
+
+        setTelemetry(5, 'LOADING AESTHETIC TYPEFACE...', 'FONT_INIT');
+        const { fontName, isUnicode } = await registerAestheticFont(doc, config.font);
+
+        const pageW = doc.internal.pageSize.getWidth();
+        const pageH = doc.internal.pageSize.getHeight();
+        const margin = config.margin;
+        const contentW = pageW - margin * 2;
+        const bottomLimit = pageH - margin - (config.pageNumbers ? 6 : 0);
+
+        const basePt = config.fontSize;
+        const ptToMm = 0.352778;
+        const baseLineStep = basePt * ptToMm * config.lineHeight;
+
+        let cursorY = margin;
+
+        function newPage() {
+          doc.addPage();
+          cursorY = margin;
+        }
+
+        function ensureSpace(hNeeded) {
+          if (cursorY + hNeeded > bottomLimit) {
+            newPage();
+          }
+        }
+
+        // Render Title Header
+        doc.setFont(fontName, 'bold');
+        doc.setFontSize(basePt + 7);
+        const cleanTitle = cleanBookText(epubState.title, isUnicode);
+        const titleLines = doc.splitTextToSize(cleanTitle, contentW);
+        cursorY = margin + 14;
+        doc.text(titleLines, margin, cursorY);
+        cursorY += titleLines.length * (basePt + 7) * ptToMm * 1.28 + 4;
+
+        doc.setFont(fontName, 'italic');
+        doc.setFontSize(basePt + 1.5);
+        const cleanAuthor = cleanBookText(epubState.author, isUnicode);
+        const authorLines = doc.splitTextToSize(cleanAuthor, contentW);
+        doc.text(authorLines, margin, cursorY);
+        cursorY += authorLines.length * (basePt + 1.5) * ptToMm * 1.3 + 6;
+
+        doc.setDrawColor(120, 120, 120);
+        doc.setLineWidth(0.35);
+        doc.line(margin, cursorY, pageW - margin, cursorY);
+        cursorY += 10;
+
+        // Render Standalone Block Figure with Elastic Page-Fitting
+        function renderStandaloneImage(imgObj, item) {
+          let { drawW, drawH } = computePhysicalImageSize(imgObj, item, basePt, contentW, false);
+
+          const maxPageImgH = bottomLimit - margin - 4;
+          if (drawH > maxPageImgH) {
+            const r = maxPageImgH / drawH;
+            drawH = maxPageImgH;
+            drawW *= r;
+          }
+
+          const remH = bottomLimit - cursorY;
+          if (drawH + 3 > remH) {
+            // Elastic fit: if scaling down slightly (up to 72%) fits the current page cleanly, do it!
+            if (remH >= Math.max(38, drawH * 0.72)) {
+              const shrink = (remH - 3) / drawH;
+              drawH *= shrink;
+              drawW *= shrink;
+            } else {
+              newPage();
+            }
+          }
+
+          cursorY += 1.5;
+          const offsetX = margin + (contentW - drawW) / 2;
+          doc.addImage(imgObj.dataUrl, imgObj.format, offsetX, cursorY, drawW, drawH, imgObj.alias, 'FAST');
+          cursorY += drawH + 3.5;
+        }
+
+        // Render Mixed Text + Inline Math/Image Paragraph with True Inter-Word Justification
+        function renderRichParagraph(tokens, blockType) {
+          let blockPt = basePt;
+          let defaultStyle = 'normal';
+          let indent = 0;
+          let extraBefore = 0;
+          let extraAfter = baseLineStep * 0.42;
+
+          if (blockType === 'h1') {
+            blockPt = basePt + 4.5;
+            defaultStyle = 'bold';
+            extraBefore = baseLineStep * 0.75;
+            extraAfter = baseLineStep * 0.5;
+          } else if (blockType === 'h2') {
+            blockPt = basePt + 2.5;
+            defaultStyle = 'bold';
+            extraBefore = baseLineStep * 0.6;
+            extraAfter = baseLineStep * 0.4;
+          } else if (blockType === 'h3') {
+            blockPt = basePt + 1;
+            defaultStyle = 'bold';
+            extraBefore = baseLineStep * 0.45;
+            extraAfter = baseLineStep * 0.35;
+          } else if (blockType === 'quote') {
+            defaultStyle = 'italic';
+            indent = 5;
+          } else if (blockType === 'li') {
+            indent = 3.5;
+            extraAfter = baseLineStep * 0.22;
+          }
+
+          const lineStep = blockPt * ptToMm * config.lineHeight;
+          const availW = contentW - indent * 2;
+
+          if (cursorY > margin + 2) {
+            cursorY += extraBefore;
+          }
+
+          // Measure tokens & wrap into lines
+          doc.setFont(fontName, defaultStyle);
+          doc.setFontSize(blockPt);
+          const spaceW = doc.getTextWidth(' ');
+
+          const lines = [];
+          let currentLine = [];
+          let currentW = 0;
+
+          for (const tok of tokens) {
+            if (tok.kind === 'word') {
+              const style = tok.bold ? 'bold' : (tok.italic ? 'italic' : defaultStyle);
+              doc.setFont(fontName, style);
+              const w = doc.getTextWidth(tok.text);
+              const gapBefore = currentLine.length > 0 && tok.needsSpaceBefore ? spaceW : 0;
+
+              if (currentLine.length > 0 && currentW + gapBefore + w > availW) {
+                lines.push({ items: currentLine, width: currentW });
+                currentLine = [{ ...tok, style, width: w, gapBefore: 0 }];
+                currentW = w;
+              } else {
+                currentLine.push({ ...tok, style, width: w, gapBefore });
+                currentW += gapBefore + w;
+              }
+            } else if (tok.kind === 'inline-img') {
+              const gapBefore = currentLine.length > 0 && tok.needsSpaceBefore ? spaceW : 0;
+              const w = tok.drawW + 0.8;
+
+              if (currentLine.length > 0 && currentW + gapBefore + w > availW) {
+                lines.push({ items: currentLine, width: currentW });
+                currentLine = [{ ...tok, width: w, gapBefore: 0 }];
+                currentW = w;
+              } else {
+                currentLine.push({ ...tok, width: w, gapBefore });
+                currentW += gapBefore + w;
+              }
+            }
+          }
+
+          if (currentLine.length > 0) {
+            lines.push({ items: currentLine, width: currentW });
+          }
+
+          if (blockType.startsWith('h')) {
+            ensureSpace(lines.length * lineStep + baseLineStep * 1.8);
+          }
+
+          // Draw each wrapped line
+          for (let l = 0; l < lines.length; l++) {
+            const lineObj = lines[l];
+            const isLastLine = l === lines.length - 1;
+
+            // Find tallest inline image on this line so equations never overlap surrounding lines
+            let maxImgH = 0;
+            for (const it of lineObj.items) {
+              if (it.kind === 'inline-img' && it.drawH > maxImgH) {
+                maxImgH = it.drawH;
+              }
+            }
+
+            const rowH = Math.max(lineStep, maxImgH + 1.4);
+            ensureSpace(rowH);
+
+            // Compute extra inter-word spacing for justification (never stretches characters!)
+            let extraGap = 0;
+            if (config.justify && blockType === 'p' && !isLastLine) {
+              const gapCount = lineObj.items.filter(it => it.gapBefore > 0).length;
+              const slack = availW - lineObj.width;
+              if (gapCount > 0 && slack > 0 && slack < availW * 0.28) {
+                extraGap = Math.min(spaceW * 1.8, slack / gapCount);
+              }
+            }
+
+            const textBaselineY = cursorY + (rowH - lineStep) * 0.55 + blockPt * ptToMm * 0.82;
+            let x = margin + indent;
+
+            for (const it of lineObj.items) {
+              if (it.gapBefore > 0) {
+                x += it.gapBefore + extraGap;
+              }
+
+              if (it.kind === 'word') {
+                doc.setFont(fontName, it.style);
+                doc.setFontSize(blockPt);
+                doc.text(it.text, x, textBaselineY);
+                x += it.width;
+              } else if (it.kind === 'inline-img') {
+                // Vertically align inline math/image with text x-height center
+                const fontMidY = textBaselineY - (blockPt * ptToMm * 0.32);
+                const imgY = fontMidY - (it.drawH * 0.5);
+                doc.addImage(
+                  it.imgObj.dataUrl,
+                  it.imgObj.format,
+                  x + 0.4,
+                  imgY,
+                  it.drawW,
+                  it.drawH,
+                  it.imgObj.alias,
+                  'FAST'
+                );
+                x += it.width;
+              }
+            }
+
+            cursorY += rowH;
+          }
+
+          cursorY += extraAfter;
+        }
+
+        // Process Spine Chapters
+        const totalChapters = epubState.spine.length;
+        const parser = new DOMParser();
+
+        for (let c = 0; c < totalChapters; c++) {
+          const chPath = epubState.spine[c];
+          const pct = 8 + Math.round(((c + 1) / totalChapters) * 86);
+          setTelemetry(pct, `COMPILING CHAPTER ${c + 1} / ${totalChapters}...`, 'TYPESETTING');
+          await new Promise(r => setTimeout(r, 6));
+
+          const entry = getZipEntry(epubState.zip, chPath);
+          if (!entry) continue;
+
+          const rawHtml = await entry.async('text');
+          const htmlDoc = parser.parseFromString(rawHtml, 'text/html');
+          if (!htmlDoc || !htmlDoc.body) continue;
+
+          const chDir = chPath.includes('/') ? chPath.slice(0, chPath.lastIndexOf('/')) : '';
+          const blocks = parseChapterDom(htmlDoc.body, chDir);
+          if (!blocks.length) continue;
+
+          if (c > 0 && cursorY > margin + 25) {
+            cursorY += baseLineStep * 1.2;
+          }
+
+          for (let b = 0; b < blocks.length; b++) {
+            const block = blocks[b];
+
+            if (block.type === 'hr') {
+              ensureSpace(7);
+              cursorY += 2.5;
+              doc.setDrawColor(150, 150, 150);
+              doc.setLineWidth(0.25);
+              doc.line(margin + contentW * 0.3, cursorY, pageW - margin - contentW * 0.3, cursorY);
+              cursorY += 4.5;
+              continue;
+            }
+
+            // Pre-decode any images inside this block
+            const resolvedItems = [];
+            for (const item of block.items) {
+              if (item.kind === 'img') {
+                if (!config.images) continue;
+                const imgObj = await decodeEpubImage(epubState.zip, item.zipPath);
+                if (imgObj) resolvedItems.push({ ...item, imgObj });
+              } else {
+                resolvedItems.push(item);
+              }
+            }
+
+            if (!resolvedItems.length) continue;
+
+            // Case 1: Block contains ONLY image(s) and no text -> Render as Centered Display Equation / Figure
+            const hasText = resolvedItems.some(i => i.kind === 'text' && i.text.trim().length > 0);
+            if (!hasText) {
+              for (const it of resolvedItems) {
+                if (it.kind === 'img') {
+                  renderStandaloneImage(it.imgObj, it);
+                }
+              }
+              continue;
+            }
+
+            // Keep short lead-in sentences ending in ':' attached to the following figure block
+            const nextBlock = blocks[b + 1];
+            if (
+              nextBlock &&
+              block.plainText.length < 140 &&
+              /[:;,]$/.test(block.plainText.trim()) &&
+              nextBlock.items.some(i => i.kind === 'img') &&
+              !nextBlock.plainText
+            ) {
+              if (bottomLimit - cursorY < 48) {
+                newPage();
+              }
+            }
+
+            // Case 2: Mixed Text and Images
+            // Split into inline token stream; if a huge block diagram is embedded mid-paragraph, flush around it
+            let tokenBuffer = [];
+            let prevEndedWithSpace = false;
+
+            for (const item of resolvedItems) {
+              if (item.kind === 'text') {
+                const cleaned = cleanBookText(item.text, isUnicode);
+                if (!cleaned) continue;
+
+                const startsWithSpace = /^\s/.test(cleaned);
+                const endsWithSpace = /\s$/.test(cleaned);
+                const words = cleaned.trim().split(/\s+/).filter(Boolean);
+
+                words.forEach((w, idx) => {
+                  const needsSpace = idx === 0 ? (prevEndedWithSpace || startsWithSpace) : true;
+                  tokenBuffer.push({
+                    kind: 'word',
+                    text: w,
+                    bold: item.bold,
+                    italic: item.italic,
+                    needsSpaceBefore: needsSpace
+                  });
+                });
+                prevEndedWithSpace = endsWithSpace;
+              } else if (item.kind === 'img') {
+                const { drawW, drawH } = computePhysicalImageSize(
+                  item.imgObj,
+                  item,
+                  basePt,
+                  contentW,
+                  true
+                );
+
+                // Is this an inline equation/glyph or a large diagram?
+                const isSmallInline = config.inlineMath && drawH <= baseLineStep * 2.8 && drawW <= contentW * 0.55;
+
+                if (isSmallInline) {
+                  // Prevent tiny punctuation like ')' or '.' from wrapping alone after an inline equation
+                  tokenBuffer.push({
+                    kind: 'inline-img',
+                    imgObj: item.imgObj,
+                    drawW,
+                    drawH,
+                    needsSpaceBefore: prevEndedWithSpace
+                  });
+                  prevEndedWithSpace = false;
+                } else {
+                  if (tokenBuffer.length > 0) {
+                    renderRichParagraph(tokenBuffer, block.type);
+                    tokenBuffer = [];
+                  }
+                  renderStandaloneImage(item.imgObj, item);
+                  prevEndedWithSpace = false;
+                }
+              }
+            }
+
+            if (tokenBuffer.length > 0) {
+              renderRichParagraph(tokenBuffer, block.type);
+            }
+          }
+        }
+
+        // Stamp Page Numbers
+        const totalPages = doc.internal.getNumberOfPages();
+        if (config.pageNumbers) {
+          setTelemetry(96, 'STAMPING LUNAR TELEMETRY PAGE NUMBERS...', 'FINISHING');
+          doc.setFont(fontName, 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(110, 110, 110);
+          for (let p = 1; p <= totalPages; p++) {
+            doc.setPage(p);
+            doc.text(`${p} / ${totalPages}`, pageW / 2, pageH - Math.max(5.5, margin * 0.42), {
+              align: 'center'
+            });
+          }
+          doc.setTextColor(0, 0, 0);
+        }
+
+        setTelemetry(99, 'PACKAGING LOSSLESS PDF BINARY...', 'EXPORTING');
+        await new Promise(r => setTimeout(r, 20));
+
+        const pdfBlob = doc.output('blob');
+        if (epubState.pdfUrl) URL.revokeObjectURL(epubState.pdfUrl);
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+
+        epubState.pdfBlob = pdfBlob;
+        epubState.pdfUrl = pdfUrl;
+
+        downloadLink.href = pdfUrl;
+        downloadLink.download = epubState.pdfFilename;
+        dockMeta.textContent = `${totalPages} PAGES // ${formatBytes(pdfBlob.size)} // ${config.format.toUpperCase()} HD`;
+
+        if (navigator.canShare) {
+          const f = new File([pdfBlob], epubState.pdfFilename, { type: 'application/pdf' });
+          if (navigator.canShare({ files: [f] })) {
+            shareBtn.style.display = 'block';
+          }
+        }
+
+        outputDock.classList.add('visible');
+        setTelemetry(100, 'PDF READY FOR DOWNLOAD', 'COMPLETE');
+        compileBtn.disabled = false;
+
+        downloadLink.click();
+      } catch (err) {
+        console.error(err);
+        setTelemetry(0, 'COMPILER FAULT: ' + (err.message || 'UNKNOWN'), 'FAULT');
+        compileBtn.disabled = false;
+      }
+    });
+
+    // Android Native File Share
+    shareBtn.addEventListener('click', async () => {
+      if (!epubState.pdfBlob) return;
+      try {
+        const file = new File([epubState.pdfBlob], epubState.pdfFilename, { type: 'application/pdf' });
+        await navigator.share({ title: epubState.title, files: [file] });
+      } catch (e) {
+        console.log('Share closed', e);
+      }
+    });
+
+    // Native Print Fallback
+    document.getElementById('printBtn').addEventListener('click', () => {
+      window.print();
+    });
+  </script>
+</body>
+</html>
